@@ -36,7 +36,7 @@ public class Vehicle {
     private Integer year;
 
     @Column(name = "color", nullable = false)
-    private String cor;
+    private String color;
 
     @Column(name = "price", nullable = false)
     private BigDecimal price;
