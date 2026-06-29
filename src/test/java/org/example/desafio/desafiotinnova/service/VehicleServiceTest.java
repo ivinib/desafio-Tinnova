@@ -2,6 +2,8 @@ package org.example.desafio.desafiotinnova.service;
 
 import org.example.desafio.desafiotinnova.dto.request.VehicleCreateDTO;
 import org.example.desafio.desafiotinnova.dto.request.VehicleUpdateDTO;
+import org.example.desafio.desafiotinnova.dto.response.ReportBrandDTO;
+import org.example.desafio.desafiotinnova.dto.response.VehicleResponseDTO;
 import org.example.desafio.desafiotinnova.exception.LicencePlateDuplicated;
 import org.example.desafio.desafiotinnova.exception.ResourceNotFoundException;
 import org.example.desafio.desafiotinnova.model.Vehicle;
@@ -9,6 +11,7 @@ import org.example.desafio.desafiotinnova.repository.VehicleRepository;
 import org.example.desafio.desafiotinnova.service.contract.CurrencyService;
 import org.example.desafio.desafiotinnova.service.impl.VehicleServiceImpl;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -40,41 +43,194 @@ public class VehicleServiceTest {
     @InjectMocks
     private VehicleServiceImpl vehicleService;
 
-    @Test
-    @DisplayName("Validate licence plate duplicated")
-    void testValidateLicenceDuplicated() {
-        VehicleCreateDTO dto = new VehicleCreateDTO("ABC1D23", "Ford", 2023, "Preto", BigDecimal.valueOf(50000));
-        when(vehicleRepository.existsVehicleByLicencePlate("ABC1D23")).thenReturn(true);
+    @Nested
+    @DisplayName("Create Vehicle")
+    class CreateTests {
 
-        assertThrows(LicencePlateDuplicated.class, () -> vehicleService.create(dto));
-        verify(vehicleRepository, never()).save(any(Vehicle.class));
+        @Test
+        @DisplayName("Create vehicle and convert price")
+        void testCreateVehicle() {
+            VehicleCreateDTO dto = new VehicleCreateDTO("ABC1D23", "Ford", 2023, "Preto", BigDecimal.valueOf(50000.00));
+            BigDecimal dollarRate = BigDecimal.valueOf(5.00);
+
+            Vehicle savedVehicle = new Vehicle(1L, "ABC1D23", "Ford", 2023, "Preto", BigDecimal.valueOf(10000.00), true);
+
+            when(vehicleRepository.existsVehicleByLicencePlate("ABC1D23")).thenReturn(false);
+            when(currencyService.getUSDDollarRate()).thenReturn(dollarRate);
+            when(vehicleRepository.save(any(Vehicle.class))).thenReturn(savedVehicle);
+
+            VehicleResponseDTO response = vehicleService.create(dto);
+
+            assertThat(response).isNotNull();
+            assertThat(response.idVehicle()).isEqualTo(1L);
+            assertThat(response.priceInUSD()).isEqualByComparingTo("10000.00");
+            assertThat(response.priceInBRL()).isEqualByComparingTo("50000.00");
+            verify(vehicleRepository, times(1)).save(any(Vehicle.class));
+        }
+
+        @Test
+        @DisplayName("Should throw an exception for licence duplicated")
+        void testCreateVehicleLicenceDuplicated() {
+            VehicleCreateDTO dto = new VehicleCreateDTO("ABC1D23", "Ford", 2023, "Preto", BigDecimal.valueOf(50000.00));
+            when(vehicleRepository.existsVehicleByLicencePlate("ABC1D23")).thenReturn(true);
+
+            assertThrows(LicencePlateDuplicated.class, () -> vehicleService.create(dto));
+            verify(vehicleRepository, never()).save(any(Vehicle.class));
+        }
     }
 
-    @Test
-    @DisplayName("Update operation invalid if id does not exist")
-    void testInvalidUpdateOperationWithoutIdValue() {
-        Long idInexistent = 99L;
-        VehicleUpdateDTO dto = new VehicleUpdateDTO("ABC1D23", "Ford", 2023, "Preto", BigDecimal.valueOf(60000));
-        when(vehicleRepository.findById(idInexistent)).thenReturn(Optional.empty());
+    @Nested
+    @DisplayName("Filtered list of vehicles")
+    class ListWithFilterTests {
 
-        assertThrows(ResourceNotFoundException.class, () -> vehicleService.updateTotal(idInexistent, dto));
-        assertThrows(ResourceNotFoundException.class, () -> vehicleService.updateParcial(idInexistent, dto));
+        @Test
+        @DisplayName("List vehicles with filters")
+        void testListWithFilter() {
+            Pageable pageable = PageRequest.of(0, 10);
+            BigDecimal dollarRate = BigDecimal.valueOf(5.00);
+            Vehicle vehicle = new Vehicle(1L, "ABC1D23", "Ford", 2023, "Preto", BigDecimal.valueOf(10000.00), true);
+            Page<Vehicle> mockPage = new PageImpl<>(List.of(vehicle));
+
+            when(currencyService.getUSDDollarRate()).thenReturn(dollarRate);
+            when(vehicleRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(mockPage);
+
+            Page<VehicleResponseDTO> result = vehicleService.listWithFilter("Ford", 2023, "Preto", null, null, pageable);
+
+            assertThat(result).isNotNull();
+            assertThat(result.getContent()).hasSize(1);
+            assertThat(result.getContent().get(0).licencePlate()).isEqualTo("ABC1D23");
+        }
     }
 
-    @Test
-    @DisplayName("Validate filtering(Specification)")
-    void testFilteringOptions() {
-        Pageable pageable = PageRequest.of(0, 10);
-        when(currencyService.getUSDDollarRate()).thenReturn(BigDecimal.valueOf(5.00));
+    @Nested
+    @DisplayName("Get vehicle by ID")
+    class FindByIdTests {
 
-        Vehicle vehicle = new Vehicle(1L, "ABC1D23", "Ford", 2023, "Preto", BigDecimal.valueOf(10000), true);
-        Page<Vehicle> pageFake = new PageImpl<>(List.of(vehicle));
+        @Test
+        @DisplayName("Should get an active vehicle by it ID")
+        void testFindById() {
+            Vehicle vehicle = new Vehicle(1L, "ABC1D23", "Ford", 2023, "Preto", BigDecimal.valueOf(10000.00), true);
+            when(vehicleRepository.findById(1L)).thenReturn(Optional.of(vehicle));
+            when(currencyService.getUSDDollarRate()).thenReturn(BigDecimal.valueOf(5.00));
 
-        when(vehicleRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(pageFake);
+            VehicleResponseDTO response = vehicleService.findById(1L);
 
-        var result = vehicleService.listWithFilter("Ford", 2023, "Preto", null, null, pageable);
+            assertThat(response).isNotNull();
+            assertThat(response.idVehicle()).isEqualTo(1L);
+        }
 
-        assertThat(result).isNotNull();
-        assertThat(result.getContent()).hasSize(1);
+        @Test
+        @DisplayName("Should throw an exception if does not find vehicle by ID")
+        void testFindByIdNotFound() {
+            when(vehicleRepository.findById(1L)).thenReturn(Optional.empty());
+
+            assertThrows(ResourceNotFoundException.class, () -> vehicleService.findById(1L));
+        }
+
+        @Test
+        @DisplayName("Should throw an exception if the vehicle is inactive")
+        void testFindByIdInactive() {
+            Vehicle vehicle = new Vehicle(1L, "ABC1D23", "Ford", 2023, "Preto", BigDecimal.valueOf(10000.00), false); // active = false
+            when(vehicleRepository.findById(1L)).thenReturn(Optional.of(vehicle));
+
+            assertThrows(ResourceNotFoundException.class, () -> vehicleService.findById(1L));
+        }
+    }
+
+    @Nested
+    @DisplayName("Update vehicle")
+    class UpdateTotalTests {
+
+        @Test
+        @DisplayName("Should update the vehicle")
+        void testUpdateTotal() {
+            Vehicle vehicle = new Vehicle(1L, "ABC1D23", "Ford", 2023, "Preto", BigDecimal.valueOf(10000.00), true);
+            VehicleUpdateDTO dto = new VehicleUpdateDTO("XYZ9E87", "Chevrolet", 2024, "Branco", BigDecimal.valueOf(75000.00));
+
+            when(vehicleRepository.findById(1L)).thenReturn(Optional.of(vehicle));
+            when(vehicleRepository.existsByLicencePlateAndIdVehicleNot("XYZ9E87", 1L)).thenReturn(false);
+            when(currencyService.getUSDDollarRate()).thenReturn(BigDecimal.valueOf(5.00));
+            when(vehicleRepository.save(any(Vehicle.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+            VehicleResponseDTO response = vehicleService.updateTotal(1L, dto);
+
+            assertThat(response.licencePlate()).isEqualTo("XYZ9E87");
+            assertThat(response.brand()).isEqualTo("Chevrolet");
+            assertThat(response.priceInUSD()).isEqualByComparingTo("15000.00");
+        }
+
+        @Test
+        @DisplayName("Should throw exception if the licence plate already is registered in another vehicle")
+        void testUpdateTotalLicencePlateConflict() {
+            Vehicle vehicle = new Vehicle(1L, "ABC1D23", "Ford", 2023, "Preto", BigDecimal.valueOf(10000.00), true);
+            VehicleUpdateDTO dto = new VehicleUpdateDTO("CONFLITO1", "Chevrolet", 2024, "Branco", BigDecimal.valueOf(75000.00));
+
+            when(vehicleRepository.findById(1L)).thenReturn(Optional.of(vehicle));
+            when(vehicleRepository.existsByLicencePlateAndIdVehicleNot("CONFLITO1", 1L)).thenReturn(true);
+
+            assertThrows(LicencePlateDuplicated.class, () -> vehicleService.updateTotal(1L, dto));
+        }
+    }
+    @Nested
+    @DisplayName("Partial update vehicle")
+    class UpdateParcialTests {
+
+        @Test
+        @DisplayName("Should update only the fields sent in the DTO")
+        void testUpdateParcial() {
+            Vehicle vehicle = new Vehicle(1L, "ABC1D23", "Ford", 2023, "Preto", BigDecimal.valueOf(10000.00), true);
+            VehicleUpdateDTO dto = new VehicleUpdateDTO(null, null, null, "Vermelho", null); // Apenas cor muda
+
+            when(vehicleRepository.findById(1L)).thenReturn(Optional.of(vehicle));
+            when(currencyService.getUSDDollarRate()).thenReturn(BigDecimal.valueOf(5.00));
+            when(vehicleRepository.save(any(Vehicle.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+            VehicleResponseDTO response = vehicleService.updateParcial(1L, dto);
+
+            assertThat(response.color()).isEqualTo("Vermelho");
+            assertThat(response.brand()).isEqualTo("Ford"); // Manteve o original
+            assertThat(response.licencePlate()).isEqualTo("ABC1D23"); // Manteve o original
+        }
+    }
+
+    @Nested
+    @DisplayName("Deletion tests")
+    class DeleteTests {
+
+        @Test
+        @DisplayName("Delete successfully if is not active")
+        void testDelete() {
+            Vehicle vehicle = new Vehicle(1L, "ABC1D23", "Ford", 2023, "Preto", BigDecimal.valueOf(10000.00), false);
+            when(vehicleRepository.findById(1L)).thenReturn(Optional.of(vehicle));
+
+            vehicleService.delete(1L);
+
+            verify(vehicleRepository, times(1)).deleteById(1L);
+        }
+
+        @Test
+        @DisplayName("Should throw an exception if the vehicle is active")
+        void testDeleteActiveVehicle() {
+            Vehicle vehicle = new Vehicle(1L, "ABC1D23", "Ford", 2023, "Preto", BigDecimal.valueOf(10000.00), true);
+            when(vehicleRepository.findById(1L)).thenReturn(Optional.of(vehicle));
+
+            assertThrows(IllegalStateException.class, () -> vehicleService.delete(1L));
+            verify(vehicleRepository, never()).deleteById(anyLong());
+        }
+    }
+    @Nested
+    @DisplayName("Report by brand")
+    class ReportTests {
+        @Test
+        @DisplayName("Should return the report list provided by the repository")
+        void testGetReportByBrand() {
+            List<ReportBrandDTO> mockReport = List.of(new ReportBrandDTO("Ford", 1L, 50000.00));
+            when(vehicleRepository.getReportByBrand()).thenReturn(mockReport);
+
+            List<ReportBrandDTO> response = vehicleService.getReportByBrand();
+
+            assertThat(response).isNotEmpty().hasSize(1);
+            assertThat(response.get(0).brand()).isEqualTo("Ford");
+        }
     }
 }
