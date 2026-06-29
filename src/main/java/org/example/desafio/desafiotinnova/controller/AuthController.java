@@ -1,5 +1,8 @@
 package org.example.desafio.desafiotinnova.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.desafio.desafiotinnova.dto.request.LoginRequestDTO;
@@ -19,6 +22,11 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenService tokenService;
 
+    @Operation(summary = "Autenticar usuário", description = "Recebe as credenciais e devolve um token JWT válido com a role do usuário (ADMIN ou USER).")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Autenticação efetuada com sucesso"),
+            @ApiResponse(responseCode = "401", description = "Credenciais inválidas ou usuário não cadastrado")
+    })
     @PostMapping("/login")
     public ResponseEntity<TokenResponseDTO> login(@RequestBody @Valid LoginRequestDTO loginRequestDto) {
 

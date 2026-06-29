@@ -1,5 +1,8 @@
 package org.example.desafio.desafiotinnova.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.desafio.desafiotinnova.dto.request.VehicleCreateDTO;
@@ -24,6 +27,14 @@ public class VehicleController {
 
     private final VehicleService vehicleService;
 
+    @Operation(summary = "Cadastrar um novo veículo", description = "Operação restrita para administradores (ADMIN). Salva o preço convertido para USD.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Veículo cadastrado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Dados de requisição inválidos (Erros de validação)"),
+            @ApiResponse(responseCode = "401", description = "Não autenticado (Token ausente ou inválido)"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado (Usuário sem papel de ADMIN)"),
+            @ApiResponse(responseCode = "409", description = "Conflito: Placa já cadastrada no sistema")
+    })
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<VehicleResponseDTO> create(@RequestBody @Valid VehicleCreateDTO dto) {
