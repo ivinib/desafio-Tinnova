@@ -1,5 +1,6 @@
 package org.example.desafio.desafiotinnova.service.impl;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.desafio.desafiotinnova.exception.CurrencyServiceUnavailableException;
 import org.example.desafio.desafiotinnova.service.contract.CurrencyService;
@@ -13,6 +14,7 @@ import java.util.Map;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class CurrencyServiceImpl implements CurrencyService {
 
     private final RestClient restClient = RestClient.create();
@@ -23,7 +25,7 @@ public class CurrencyServiceImpl implements CurrencyService {
         log.info("Getting USD Dollar rate from Awesome API...");
         try {
             Map<String, Object> response = restClient.get()
-                    .uri("https://awesomeapi.com.br")
+                    .uri("https://economia.awesomeapi.com.br/json/last/USD-BRL")
                     .retrieve()
                     .body(new ParameterizedTypeReference<Map<String, Object>>() {});
 
@@ -42,7 +44,7 @@ public class CurrencyServiceImpl implements CurrencyService {
     private BigDecimal getFromFallBackAPI() {
         try {
             Map<String, Object> response = restClient.get()
-                    .uri("https://frankfurter.app")
+                    .uri("https://api.frankfurter.app/latest?from=USD&to=BRL")
                     .retrieve()
                     .body(new ParameterizedTypeReference<Map<String, Object>>() {});
 

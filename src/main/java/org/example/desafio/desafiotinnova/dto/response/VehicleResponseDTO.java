@@ -10,5 +10,6 @@ public record VehicleResponseDTO(
         String color,
         BigDecimal priceInUSD,
         BigDecimal priceInBRL,
-        BigDecimal currency
+        BigDecimal currency,
+        Boolean active
 ) {}

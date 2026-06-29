@@ -7,17 +7,15 @@ import jakarta.persistence.Id;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Column;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+
 import java.math.BigDecimal;
+import org.hibernate.annotations.SQLDelete;
 
 @Entity
 @Table(name = "tb_vehicle", uniqueConstraints = {@UniqueConstraint(columnNames = "licence_plate")})
-
-@Getter
-@Setter
+@SQLDelete(sql = "UPDATE tb_vehicle SET ativo = false WHERE id_vehicle = ?")
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class Vehicle {
@@ -32,7 +30,7 @@ public class Vehicle {
     @Column(name = "brand", nullable = false)
     private String brand;
 
-    @Column(name = "year", nullable = false)
+    @Column(name = "vehicle_year", nullable = false)
     private Integer year;
 
     @Column(name = "color", nullable = false)
@@ -41,6 +39,6 @@ public class Vehicle {
     @Column(name = "price", nullable = false)
     private BigDecimal price;
 
-    @Column(nullable = false)
-    private boolean ativo = true;
+    @Column(name = "active", nullable = false)
+    private boolean active = true;
 }

@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -29,30 +30,30 @@ public class VehicleServiceImpl implements VehicleService {
     private final VehicleRepository vehicleRepository;
     private final CurrencyService currencyService;
 
-
     @Override
     @Transactional
     public VehicleResponseDTO create(VehicleCreateDTO dto) {
         if (vehicleRepository.existsVehicleByLicencePlate(dto.licencePlate())) {
-            throw new LicencePlateDuplicated("Vehicle with licence plate: " + dto.licencePlate() + " it's already registered");
+            throw new LicencePlateDuplicated("Vehicle with licence plate: " + dto.licencePlate() + " is already registered");
         }
         BigDecimal dollarRate = currencyService.getUSDDollarRate();
-        BigDecimal priceBRL = dto.price().divide(dollarRate, 4, RoundingMode.HALF_UP);
+        BigDecimal priceUSD = dto.price().divide(dollarRate, 4, RoundingMode.HALF_UP);
 
-        Vehicle veiculo = new Vehicle();
-        veiculo.setLicencePlate(dto.licencePlate());
-        veiculo.setBrand(dto.brand());
-        veiculo.setYear(dto.year());
-        veiculo.setColor(dto.color());
-        veiculo.setPrice(priceBRL);
+        Vehicle vehicle = new Vehicle();
+        vehicle.setLicencePlate(dto.licencePlate());
+        vehicle.setBrand(dto.brand());
+        vehicle.setYear(dto.year());
+        vehicle.setColor(dto.color());
+        vehicle.setPrice(priceUSD);
 
-        return mapToResponse(vehicleRepository.save(veiculo), dollarRate);
+        return mapToResponse(vehicleRepository.save(vehicle), dollarRate);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<VehicleResponseDTO> listWithFilter(String brand, Integer year, String color, BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable) {
-        Specification<Vehicle> spec = VehicleSpecifications.byFilters(brand, year, color, minPrice, maxPrice);
+        Specification<Vehicle> spec = VehicleSpecifications.byFilters(brand, year, color, minPrice, maxPrice)
+                .and((root, query, cb) -> cb.equal(root.get("active"), true));
         BigDecimal dollarRate = currencyService.getUSDDollarRate();
         return vehicleRepository.findAll(spec, pageable).map(v -> mapToResponse(v, dollarRate));
     }
@@ -62,9 +63,13 @@ public class VehicleServiceImpl implements VehicleService {
     public VehicleResponseDTO findById(Long id) {
         Vehicle vehicle = vehicleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found with Id: " + id));
+
+        if (!vehicle.isActive()) {
+            throw new ResourceNotFoundException("Vehicle not found with Id: " + id);
+        }
+        
         return mapToResponse(vehicle, currencyService.getUSDDollarRate());
     }
-
 
     @Override
     @Transactional
@@ -72,13 +77,21 @@ public class VehicleServiceImpl implements VehicleService {
         Vehicle vehicle = vehicleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found with Id: " + id));
 
+        if (!vehicle.isActive()) {
+            throw new ResourceNotFoundException("Vehicle not found with Id: " + id);
+        }
+
+        validarNovaPlaca(id, dto.licencePlate());
+
         vehicle.setLicencePlate(dto.licencePlate());
         vehicle.setBrand(dto.brand());
         vehicle.setYear(dto.year());
         vehicle.setColor(dto.color());
 
         BigDecimal dollarRate = currencyService.getUSDDollarRate();
-        vehicle.setPrice(dto.priceBRL().divide(dollarRate, 4, RoundingMode.HALF_UP));
+        if (dto.priceBRL() != null) {
+            vehicle.setPrice(dto.priceBRL().divide(dollarRate, 4, RoundingMode.HALF_UP));
+        }
 
         return mapToResponse(vehicleRepository.save(vehicle), dollarRate);
     }
@@ -89,7 +102,15 @@ public class VehicleServiceImpl implements VehicleService {
         Vehicle vehicle = vehicleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found with Id: " + id));
 
-        if (dto.licencePlate() != null) vehicle.setLicencePlate(dto.licencePlate());
+        if (!vehicle.isActive()) {
+            throw new ResourceNotFoundException("Vehicle not found with Id: " + id);
+        }
+
+        if (dto.licencePlate() != null) {
+            validarNovaPlaca(id, dto.licencePlate());
+            vehicle.setLicencePlate(dto.licencePlate());
+        }
+
         if (dto.brand() != null) vehicle.setBrand(dto.brand());
         if (dto.year() != null) vehicle.setYear(dto.year());
         if (dto.color() != null) vehicle.setColor(dto.color());
@@ -103,23 +124,38 @@ public class VehicleServiceImpl implements VehicleService {
     }
 
     @Override
+    @Transactional
     public void delete(Long id) {
-        if (!vehicleRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Vehicle not found.");
+        Optional<Vehicle> vehicle = vehicleRepository.findById(id);
+        if (vehicle.isEmpty()) {
+            throw new ResourceNotFoundException("Vehicle not found with Id: " + id);
         }
+
+        if (vehicle.get().isActive()) {
+            throw new IllegalStateException("Active vehicle cannot be deleted: " + id);
+        }
+        
         vehicleRepository.deleteById(id);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ReportBrandDTO> getReportByBrand() {
         return vehicleRepository.getReportByBrand();
+    }
+
+
+    private void validarNovaPlaca(Long currentId, String newLicencePlate) {
+        if (vehicleRepository.existsByLicencePlateAndIdVehicleNot(newLicencePlate, currentId)) {
+            throw new LicencePlateDuplicated("Vehicle with licence plate: " + newLicencePlate + " is already registered by another vehicle");
+        }
     }
 
     private VehicleResponseDTO mapToResponse(Vehicle vehicle, BigDecimal dollarRate) {
         BigDecimal priceBRL = vehicle.getPrice().multiply(dollarRate).setScale(2, RoundingMode.HALF_UP);
         return new VehicleResponseDTO(
                 vehicle.getIdVehicle(), vehicle.getLicencePlate(), vehicle.getBrand(), vehicle.getYear(), vehicle.getColor(),
-                vehicle.getPrice().setScale(2, RoundingMode.HALF_UP), priceBRL, dollarRate
+                vehicle.getPrice().setScale(2, RoundingMode.HALF_UP), priceBRL, dollarRate, vehicle.isActive()
         );
     }
 }

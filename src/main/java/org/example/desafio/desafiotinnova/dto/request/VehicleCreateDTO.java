@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 
 public record VehicleCreateDTO (
     @NotBlank(message = "Licende plate is required")
-    @Pattern(regexp = "^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$", message = "Licence place format must be AAAA-1111 or AAA-1A11")
+    @Pattern(regexp = "^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$", message = "Licence place format must be AAAA1111 or AAA1A11")
     String licencePlate,
 
     @NotBlank(message = "Vehicle brand is required")

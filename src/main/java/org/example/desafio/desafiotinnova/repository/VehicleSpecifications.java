@@ -10,7 +10,6 @@ import java.util.List;
 
 public class VehicleSpecifications {
 
-    //Method used to create dinamic query using some optional filters
     public static Specification<Vehicle> byFilters(
             String brand,
             Integer year,
@@ -21,7 +20,6 @@ public class VehicleSpecifications {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            // Filtro por brand (Case-Insensitive)
             if (brand != null && !brand.isBlank()) {
                 predicates.add(criteriaBuilder.equal(
                         criteriaBuilder.lower(root.get("brand")),

@@ -28,6 +28,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorPayload> handleIllegalState(ResourceNotFoundException ex, HttpServletRequest request) {
+        ErrorPayload error = new ErrorPayload(
+                HttpStatus.NOT_FOUND.value(),
+                "Illegal transaction",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
 
     @ExceptionHandler(LicencePlateDuplicated.class)
     public ResponseEntity<ErrorPayload> handleConflict(LicencePlateDuplicated ex, HttpServletRequest request) {

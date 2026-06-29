@@ -6,5 +6,9 @@ import java.math.BigDecimal;
 public record ReportBrandDTO(
         String brand,
         Long quantityVehicles,
-        BigDecimal avgPrice
-) {}
+        Double avgPrice
+) {
+    public BigDecimal convertToBigDecimal(){
+        return avgPrice != null ? BigDecimal.valueOf(avgPrice) :BigDecimal.ZERO;
+    }
+}
