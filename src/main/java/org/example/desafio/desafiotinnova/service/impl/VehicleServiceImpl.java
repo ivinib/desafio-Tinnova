@@ -51,8 +51,8 @@ public class VehicleServiceImpl implements VehicleService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<VehicleResponseDTO> listWithFilter(String marca, Integer ano, String cor, BigDecimal minPreco, BigDecimal maxPreco, Pageable pageable) {
-        Specification<Vehicle> spec = VehicleSpecifications.byFilters(marca, ano, cor, minPreco, maxPreco);
+    public Page<VehicleResponseDTO> listWithFilter(String brand, Integer year, String color, BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable) {
+        Specification<Vehicle> spec = VehicleSpecifications.byFilters(brand, year, color, minPrice, maxPrice);
         BigDecimal dollarRate = currencyService.getUSDDollarRate();
         return vehicleRepository.findAll(spec, pageable).map(v -> mapToResponse(v, dollarRate));
     }

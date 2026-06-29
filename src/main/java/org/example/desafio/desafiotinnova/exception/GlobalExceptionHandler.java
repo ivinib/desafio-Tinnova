@@ -1,7 +1,6 @@
 package org.example.desafio.desafiotinnova.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.example.desafio.desafiotinnova.model.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
