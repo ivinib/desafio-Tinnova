@@ -1,7 +1,6 @@
 Desafio API - Gestão de VeículosAPI REST para gerenciamento de veículos, contendo conversão de moedas em tempo real, relatórios gerenciais estruturados e segurança baseada em niveis de acesso.
 
-Tecnologias 
-Utilizadas
+Tecnologias Utilizadas
  -Java 21 & Spring Boot 3.2+
  -Spring Security & JWT (Auth0)
  -Spring Data JPA & Banco de Dados H2
