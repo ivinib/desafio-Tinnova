@@ -6,7 +6,7 @@ import org.example.desafio.desafiotinnova.dto.request.VehicleCreateDTO;
 import org.example.desafio.desafiotinnova.dto.request.VehicleUpdateDTO;
 import org.example.desafio.desafiotinnova.dto.response.ReportBrandDTO;
 import org.example.desafio.desafiotinnova.dto.response.VehicleResponseDTO;
-import org.example.desafio.desafiotinnova.exception.LicencePlateDuplicated;
+import org.example.desafio.desafiotinnova.exception.LicensePlateDuplicated;
 import org.example.desafio.desafiotinnova.exception.ResourceNotFoundException;
 import org.example.desafio.desafiotinnova.model.Vehicle;
 import org.example.desafio.desafiotinnova.repository.VehicleRepository;
@@ -32,38 +32,47 @@ public class VehicleServiceImpl implements VehicleService {
     private final VehicleRepository vehicleRepository;
     private final CurrencyService currencyService;
 
+    //Implementation of business rules of creating the vehicle and saving to database
     @Override
     @Transactional
     public VehicleResponseDTO create(VehicleCreateDTO dto) {
-        if (vehicleRepository.existsVehicleByLicencePlate(dto.licencePlate())) {
-            throw new LicencePlateDuplicated("Vehicle with licence plate: " + dto.licencePlate() + " is already registered");
+        //Assures the license plate to be created in uppercase
+        String toUpperCaseLicensePlate = dto.licensePlate().trim().toUpperCase();
+
+        log.info("Creating vehicle with license plate: {}", toUpperCaseLicensePlate);
+
+        if (vehicleRepository.existsVehicleByLicensePlate(toUpperCaseLicensePlate)) {
+            throw new LicensePlateDuplicated("Vehicle with license plate: " + toUpperCaseLicensePlate + " is already registered");
         }
         BigDecimal dollarRate = currencyService.getUSDDollarRate();
         BigDecimal priceUSD = dto.price().divide(dollarRate, 4, RoundingMode.HALF_UP);
 
         Vehicle vehicle = new Vehicle();
-        vehicle.setLicencePlate(dto.licencePlate());
+        vehicle.setLicensePlate(toUpperCaseLicensePlate);
         vehicle.setBrand(dto.brand());
         vehicle.setYear(dto.year());
         vehicle.setColor(dto.color());
         vehicle.setPrice(priceUSD);
         vehicle.setActive(true);
 
-        log.info("Creating vehicle with licence plate: {}", dto.licencePlate());
-
         return mapToResponse(vehicleRepository.save(vehicle), dollarRate);
     }
 
+    //Implementation of filtering the vehicles. In this is possible to get a full list of registers or filtered by vehicles attributes
     @Override
     @Transactional(readOnly = true)
     public Page<VehicleResponseDTO> listWithFilter(String brand, Integer year, String color, BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable) {
+        //Using Specification to filter the vehicles by attributes
         Specification<Vehicle> spec = VehicleSpecifications.byFilters(brand, year, color, minPrice, maxPrice)
                 .and((root, query, cb) -> cb.equal(root.get("active"), true));
+
         BigDecimal dollarRate = currencyService.getUSDDollarRate();
         log.info("Listing vehicles with filters");
+
         return vehicleRepository.findAll(spec, pageable).map(v -> mapToResponse(v, dollarRate));
     }
 
+    //Implementation of getting a specific vehicle by it id
     @Override
     @Transactional(readOnly = true)
     public VehicleResponseDTO findById(Long id) {
@@ -73,13 +82,17 @@ public class VehicleServiceImpl implements VehicleService {
         if (!vehicle.isActive()) {
             throw new ResourceNotFoundException("Vehicle not found with Id: " + id);
         }
-        
+
+        log.info("Finding vehicle with Id: {}", id);
         return mapToResponse(vehicle, currencyService.getUSDDollarRate());
     }
 
+    //Implementation of updating all attributes of the vehicle
     @Override
     @Transactional
     public VehicleResponseDTO updateTotal(Long id, VehicleUpdateDTO dto) {
+        String toUpperCaseLicensePlate = dto.licensePlate().trim().toUpperCase();
+
         Vehicle vehicle = vehicleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found with Id: " + id));
 
@@ -87,9 +100,11 @@ public class VehicleServiceImpl implements VehicleService {
             throw new ResourceNotFoundException("Vehicle not found with Id: " + id);
         }
 
-        validarNovaPlaca(id, dto.licencePlate());
+        log.info("Updating vehicle with Id: {}", id);
 
-        vehicle.setLicencePlate(dto.licencePlate());
+        validateNewLicensePlate(id, toUpperCaseLicensePlate);
+
+        vehicle.setLicensePlate(toUpperCaseLicensePlate);
         vehicle.setBrand(dto.brand());
         vehicle.setYear(dto.year());
         vehicle.setColor(dto.color());
@@ -102,9 +117,11 @@ public class VehicleServiceImpl implements VehicleService {
         return mapToResponse(vehicleRepository.save(vehicle), dollarRate);
     }
 
+    //Implementation of updating partially attributes of the vehicle
     @Override
     @Transactional
     public VehicleResponseDTO updateParcial(Long id, VehicleUpdateDTO dto) {
+
         Vehicle vehicle = vehicleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found with Id: " + id));
 
@@ -112,9 +129,12 @@ public class VehicleServiceImpl implements VehicleService {
             throw new ResourceNotFoundException("Vehicle not found with Id: " + id);
         }
 
-        if (dto.licencePlate() != null) {
-            validarNovaPlaca(id, dto.licencePlate());
-            vehicle.setLicencePlate(dto.licencePlate());
+        log.info("Updating partially vehicle with Id: {}", id);
+
+        if (dto.licensePlate() != null) {
+            String toUpperCaseLicensePlate = dto.licensePlate().trim().toUpperCase();
+            validateNewLicensePlate(id, toUpperCaseLicensePlate);
+            vehicle.setLicensePlate(toUpperCaseLicensePlate);
         }
 
         if (dto.brand() != null) vehicle.setBrand(dto.brand());
@@ -129,6 +149,7 @@ public class VehicleServiceImpl implements VehicleService {
         return mapToResponse(vehicleRepository.save(vehicle), dollarRate);
     }
 
+    //Implementation of delete a vehicle. It performs a soft-delete, setting active field to false and keeping the register on database
     @Override
     @Transactional
     public void delete(Long id) {
@@ -137,30 +158,32 @@ public class VehicleServiceImpl implements VehicleService {
             throw new ResourceNotFoundException("Vehicle not found with Id: " + id);
         }
 
-        if (vehicle.get().isActive()) {
-            throw new IllegalStateException("Active vehicle cannot be deleted: " + id);
-        }
+        log.info("Soft-delete of vehicle id: {}", vehicle.get().getIdVehicle());
         
         vehicleRepository.deleteById(id);
     }
 
+    //Implementation of generating a report grouped by vehicle brand
     @Override
     @Transactional(readOnly = true)
     public List<ReportBrandDTO> getReportByBrand() {
+        log.info("Getting report by brand");
         return vehicleRepository.getReportByBrand();
     }
 
 
-    private void validarNovaPlaca(Long currentId, String newLicencePlate) {
-        if (vehicleRepository.existsByLicencePlateAndIdVehicleNot(newLicencePlate, currentId)) {
-            throw new LicencePlateDuplicated("Vehicle with licence plate: " + newLicencePlate + " is already registered by another vehicle");
+    //Method that helps to validate if a license place is duplicated in another vehicle
+    private void validateNewLicensePlate(Long currentId, String newLicensePlate) {
+        if (vehicleRepository.existsByLicensePlateAndIdVehicleNot(newLicensePlate, currentId)) {
+            throw new LicensePlateDuplicated("Vehicle with license plate: " + newLicensePlate + " is already registered by another vehicle");
         }
     }
 
+    //Method that helps to convert the Vehicle object into a DTO response
     private VehicleResponseDTO mapToResponse(Vehicle vehicle, BigDecimal dollarRate) {
         BigDecimal priceBRL = vehicle.getPrice().multiply(dollarRate).setScale(2, RoundingMode.HALF_UP);
         return new VehicleResponseDTO(
-                vehicle.getIdVehicle(), vehicle.getLicencePlate(), vehicle.getBrand(), vehicle.getYear(), vehicle.getColor(),
+                vehicle.getIdVehicle(), vehicle.getLicensePlate(), vehicle.getBrand(), vehicle.getYear(), vehicle.getColor(),
                 vehicle.getPrice().setScale(2, RoundingMode.HALF_UP), priceBRL, dollarRate, vehicle.isActive()
         );
     }

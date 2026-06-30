@@ -4,11 +4,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import org.springframework.security.core.AuthenticationException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -40,8 +42,8 @@ public class GlobalExceptionHandler {
     }
 
 
-    @ExceptionHandler(LicencePlateDuplicated.class)
-    public ResponseEntity<ErrorPayload> handleConflict(LicencePlateDuplicated ex, HttpServletRequest request) {
+    @ExceptionHandler(LicensePlateDuplicated.class)
+    public ResponseEntity<ErrorPayload> handleConflict(LicensePlateDuplicated ex, HttpServletRequest request) {
         ErrorPayload error = new ErrorPayload(
                 HttpStatus.CONFLICT.value(),
                 "Conflict",
@@ -102,5 +104,17 @@ public class GlobalExceptionHandler {
                 request.getRequestURI()
         );
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+    }
+    @ExceptionHandler({BadCredentialsException.class, AuthenticationException.class})
+    public ResponseEntity<ErrorPayload> handleBadCredentials(AuthenticationException ex, HttpServletRequest request) {
+
+        ErrorPayload error = new ErrorPayload(
+                HttpStatus.UNAUTHORIZED.value(),
+                "Unauthorized",
+                "Username or Password incorrect.",
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
     }
 }

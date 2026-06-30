@@ -9,9 +9,9 @@ import jakarta.validation.constraints.Min;
 import java.math.BigDecimal;
 
 public record VehicleCreateDTO (
-    @NotBlank(message = "Licende plate is required")
-    @Pattern(regexp = "^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$", message = "Licence place format must be AAAA1111 or AAA1A11")
-    String licencePlate,
+    @NotBlank(message = "License plate is required")
+    @Pattern(regexp = "^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$", message = "License place format must be AAAA1111 or AAA1A11")
+    String licensePlate,
 
     @NotBlank(message = "Vehicle brand is required")
     String brand,

@@ -13,7 +13,7 @@ import java.math.BigDecimal;
 import org.hibernate.annotations.SQLDelete;
 
 @Entity
-@Table(name = "tb_vehicle", uniqueConstraints = {@UniqueConstraint(columnNames = "licence_plate")})
+@Table(name = "tb_vehicle", uniqueConstraints = {@UniqueConstraint(columnNames = "license_plate")})
 @SQLDelete(sql = "UPDATE tb_vehicle SET active = false WHERE id_vehicle = ?")
 @Data
 @NoArgsConstructor
@@ -24,8 +24,8 @@ public class Vehicle {
     @Column(name = "id_vehicle")
     private Long idVehicle;
 
-    @Column(name = "licence_plate", nullable = false, unique = true)
-    private String licencePlate;
+    @Column(name = "license_plate", nullable = false, unique = true)
+    private String licensePlate;
 
     @Column(name = "brand", nullable = false)
     private String brand;

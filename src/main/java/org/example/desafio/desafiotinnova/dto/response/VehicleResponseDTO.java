@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 
 public record VehicleResponseDTO(
         Long idVehicle,
-        String licencePlate,
+        String licensePlate,
         String brand,
         Integer year,
         String color,

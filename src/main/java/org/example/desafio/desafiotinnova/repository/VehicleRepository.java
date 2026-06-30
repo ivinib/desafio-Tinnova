@@ -8,17 +8,14 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface VehicleRepository extends JpaRepository<Vehicle, Long>, JpaSpecificationExecutor<Vehicle> {
-    boolean existsVehicleByLicencePlate(String licencePlate);
-    boolean existsByLicencePlateAndIdVehicleNot(String licencePlate, Long idVehicle);
-    Optional<Vehicle> findByIdVehicle(Long idVehicle);
+    boolean existsVehicleByLicensePlate(String licensePlate);
+    boolean existsByLicensePlateAndIdVehicleNot(String licensePlate, Long idVehicle);
 
     @Query("SELECT new org.example.desafio.desafiotinnova.dto.response.ReportBrandDTO(v.brand, COUNT(v), AVG(v.price)) " +
            "FROM Vehicle v GROUP BY v.brand")
     List<ReportBrandDTO> getReportByBrand();
 
-    Optional<Object> findByLicencePlate(String newLicencePlate);
 }

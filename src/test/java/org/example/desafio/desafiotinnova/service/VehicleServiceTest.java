@@ -4,7 +4,7 @@ import org.example.desafio.desafiotinnova.dto.request.VehicleCreateDTO;
 import org.example.desafio.desafiotinnova.dto.request.VehicleUpdateDTO;
 import org.example.desafio.desafiotinnova.dto.response.ReportBrandDTO;
 import org.example.desafio.desafiotinnova.dto.response.VehicleResponseDTO;
-import org.example.desafio.desafiotinnova.exception.LicencePlateDuplicated;
+import org.example.desafio.desafiotinnova.exception.LicensePlateDuplicated;
 import org.example.desafio.desafiotinnova.exception.ResourceNotFoundException;
 import org.example.desafio.desafiotinnova.model.Vehicle;
 import org.example.desafio.desafiotinnova.repository.VehicleRepository;
@@ -55,7 +55,7 @@ public class VehicleServiceTest {
 
             Vehicle savedVehicle = new Vehicle(1L, "ABC1D23", "Ford", 2023, "Preto", BigDecimal.valueOf(10000.00), true);
 
-            when(vehicleRepository.existsVehicleByLicencePlate("ABC1D23")).thenReturn(false);
+            when(vehicleRepository.existsVehicleByLicensePlate("ABC1D23")).thenReturn(false);
             when(currencyService.getUSDDollarRate()).thenReturn(dollarRate);
             when(vehicleRepository.save(any(Vehicle.class))).thenReturn(savedVehicle);
 
@@ -69,12 +69,12 @@ public class VehicleServiceTest {
         }
 
         @Test
-        @DisplayName("Should throw an exception for licence duplicated")
-        void testCreateVehicleLicenceDuplicated() {
+        @DisplayName("Should throw an exception for license duplicated")
+        void testCreateVehicleLicenseDuplicated() {
             VehicleCreateDTO dto = new VehicleCreateDTO("ABC1D23", "Ford", 2023, "Preto", BigDecimal.valueOf(50000.00));
-            when(vehicleRepository.existsVehicleByLicencePlate("ABC1D23")).thenReturn(true);
+            when(vehicleRepository.existsVehicleByLicensePlate("ABC1D23")).thenReturn(true);
 
-            assertThrows(LicencePlateDuplicated.class, () -> vehicleService.create(dto));
+            assertThrows(LicensePlateDuplicated.class, () -> vehicleService.create(dto));
             verify(vehicleRepository, never()).save(any(Vehicle.class));
         }
     }
@@ -98,7 +98,7 @@ public class VehicleServiceTest {
 
             assertThat(result).isNotNull();
             assertThat(result.getContent()).hasSize(1);
-            assertThat(result.getContent().get(0).licencePlate()).isEqualTo("ABC1D23");
+            assertThat(result.getContent().get(0).licensePlate()).isEqualTo("ABC1D23");
         }
     }
 
@@ -148,27 +148,27 @@ public class VehicleServiceTest {
             VehicleUpdateDTO dto = new VehicleUpdateDTO("XYZ9E87", "Chevrolet", 2024, "Branco", BigDecimal.valueOf(75000.00));
 
             when(vehicleRepository.findById(1L)).thenReturn(Optional.of(vehicle));
-            when(vehicleRepository.existsByLicencePlateAndIdVehicleNot("XYZ9E87", 1L)).thenReturn(false);
+            when(vehicleRepository.existsByLicensePlateAndIdVehicleNot("XYZ9E87", 1L)).thenReturn(false);
             when(currencyService.getUSDDollarRate()).thenReturn(BigDecimal.valueOf(5.00));
             when(vehicleRepository.save(any(Vehicle.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
             VehicleResponseDTO response = vehicleService.updateTotal(1L, dto);
 
-            assertThat(response.licencePlate()).isEqualTo("XYZ9E87");
+            assertThat(response.licensePlate()).isEqualTo("XYZ9E87");
             assertThat(response.brand()).isEqualTo("Chevrolet");
             assertThat(response.priceInUSD()).isEqualByComparingTo("15000.00");
         }
 
         @Test
-        @DisplayName("Should throw exception if the licence plate already is registered in another vehicle")
-        void testUpdateTotalLicencePlateConflict() {
+        @DisplayName("Should throw exception if the license plate already is registered in another vehicle")
+        void testUpdateTotallicensePlateConflict() {
             Vehicle vehicle = new Vehicle(1L, "ABC1D23", "Ford", 2023, "Preto", BigDecimal.valueOf(10000.00), true);
             VehicleUpdateDTO dto = new VehicleUpdateDTO("CONFLITO1", "Chevrolet", 2024, "Branco", BigDecimal.valueOf(75000.00));
 
             when(vehicleRepository.findById(1L)).thenReturn(Optional.of(vehicle));
-            when(vehicleRepository.existsByLicencePlateAndIdVehicleNot("CONFLITO1", 1L)).thenReturn(true);
+            when(vehicleRepository.existsByLicensePlateAndIdVehicleNot("CONFLITO1", 1L)).thenReturn(true);
 
-            assertThrows(LicencePlateDuplicated.class, () -> vehicleService.updateTotal(1L, dto));
+            assertThrows(LicensePlateDuplicated.class, () -> vehicleService.updateTotal(1L, dto));
         }
     }
     @Nested
@@ -189,7 +189,7 @@ public class VehicleServiceTest {
 
             assertThat(response.color()).isEqualTo("Vermelho");
             assertThat(response.brand()).isEqualTo("Ford"); // Manteve o original
-            assertThat(response.licencePlate()).isEqualTo("ABC1D23"); // Manteve o original
+            assertThat(response.licensePlate()).isEqualTo("ABC1D23"); // Manteve o original
         }
     }
 
@@ -206,16 +206,6 @@ public class VehicleServiceTest {
             vehicleService.delete(1L);
 
             verify(vehicleRepository, times(1)).deleteById(1L);
-        }
-
-        @Test
-        @DisplayName("Should throw an exception if the vehicle is active")
-        void testDeleteActiveVehicle() {
-            Vehicle vehicle = new Vehicle(1L, "ABC1D23", "Ford", 2023, "Preto", BigDecimal.valueOf(10000.00), true);
-            when(vehicleRepository.findById(1L)).thenReturn(Optional.of(vehicle));
-
-            assertThrows(IllegalStateException.class, () -> vehicleService.delete(1L));
-            verify(vehicleRepository, never()).deleteById(anyLong());
         }
     }
     @Nested

@@ -5,7 +5,7 @@ import org.example.desafio.desafiotinnova.dto.request.VehicleCreateDTO;
 import org.example.desafio.desafiotinnova.dto.request.VehicleUpdateDTO;
 import org.example.desafio.desafiotinnova.dto.response.ReportBrandDTO;
 import org.example.desafio.desafiotinnova.dto.response.VehicleResponseDTO;
-import org.example.desafio.desafiotinnova.exception.LicencePlateDuplicated;
+import org.example.desafio.desafiotinnova.exception.LicensePlateDuplicated;
 import org.example.desafio.desafiotinnova.exception.ResourceNotFoundException;
 import org.example.desafio.desafiotinnova.service.contract.VehicleService;
 import org.junit.jupiter.api.DisplayName;
@@ -59,7 +59,7 @@ public class VehicleControllerTest {
     @WithMockUser(roles = "USER")
     @DisplayName("Should return error 403 when user has no permission")
     void testShouldReturn403WhenUserHasNoPermission() throws Exception {
-        String jsonBody = "{\"licencePlate\":\"ABC1D23\",\"brand\":\"Ford\",\"year\":2023,\"color\":\"Preto\",\"price\":50000}";
+        String jsonBody = "{\"licensePlate\":\"ABC1D23\",\"brand\":\"Ford\",\"year\":2023,\"color\":\"Preto\",\"price\":50000}";
 
         mockMvc.perform(post("/veiculos")
                         .content(jsonBody)
@@ -71,11 +71,11 @@ public class VehicleControllerTest {
 
     @Test
     @WithMockUser(roles = "ADMIN")
-    @DisplayName("Should return error 409 when trying to register a duplicated licence plate")
-    void testShouldReturn409WhenTryingToRegisterDuplicatedLicencePlate() throws Exception {
-        String jsonBody = "{\"licencePlate\":\"ABC1D23\",\"brand\":\"Ford\",\"year\":2023,\"color\":\"Preto\",\"price\":50000}";
+    @DisplayName("Should return error 409 when trying to register a duplicated license plate")
+    void testShouldReturn409WhenTryingToRegisterDuplicatedLicensePlate() throws Exception {
+        String jsonBody = "{\"licensePlate\":\"ABC1D23\",\"brand\":\"Ford\",\"year\":2023,\"color\":\"Preto\",\"price\":50000}";
 
-        doThrow(new LicencePlateDuplicated("Licence plate is already registered"))
+        doThrow(new LicensePlateDuplicated("License plate is already registered"))
                 .when(vehicleService).create(any());
 
         mockMvc.perform(post("/veiculos")
@@ -100,7 +100,7 @@ public class VehicleControllerTest {
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.idVehicle", is(1)))
-                .andExpect(jsonPath("$.licencePlate", is("ABC1D23")));
+                .andExpect(jsonPath("$.licensePlate", is("ABC1D23")));
     }
 
     @Test
@@ -158,7 +158,7 @@ public class VehicleControllerTest {
                         .content(objectMapper.writeValueAsString(updateDto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.brand", is("Chevrolet")))
-                .andExpect(jsonPath("$.licencePlate", is("XYZ9E87")));
+                .andExpect(jsonPath("$.licensePlate", is("XYZ9E87")));
     }
 
     @Test
@@ -206,7 +206,7 @@ public class VehicleControllerTest {
     @WithMockUser(roles = "ADMIN")
     @DisplayName("Should return 400 Bad Request with structured field errors when payload validation fails")
     void testShouldReturn400WhenPayloadFieldsAreInvalid() throws Exception {
-        String invalidJson = "{\"licencePlate\":\"ERRADA\",\"brand\":\"\",\"year\":1850,\"color\":\"\",\"price\":-100}";
+        String invalidJson = "{\"licensePlate\":\"ERRADA\",\"brand\":\"\",\"year\":1850,\"color\":\"\",\"price\":-100}";
         mockMvc.perform(post("/veiculos")
                 .content(invalidJson)
                 .contentType(MediaType.APPLICATION_JSON))

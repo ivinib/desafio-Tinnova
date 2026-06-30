@@ -63,7 +63,7 @@ public class VehicleE2eIntegrationTest {
         String authorizationHeader = "Bearer " + token;
 
         // Register a new vehicle in ADMIN role
-        String vehiclePayload = "{\"licencePlate\":\"EXS4A56\",\"brand\":\"Volkswagen\",\"year\":2024,\"color\":\"Azul\",\"price\":95000}";
+        String vehiclePayload = "{\"licensePlate\":\"EXS4A56\",\"brand\":\"Volkswagen\",\"year\":2024,\"color\":\"Azul\",\"price\":95000}";
 
         MvcResult createResult = mockMvc.perform(post("/veiculos")
                         .header("Authorization", authorizationHeader)
@@ -82,7 +82,7 @@ public class VehicleE2eIntegrationTest {
                         .param("color", "Azul")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[0].licencePlate", is("EXS4A56")));
+                .andExpect(jsonPath("$.content[0].licensePlate", is("EXS4A56")));
 
         // Get all details of one vehicle by it id
         mockMvc.perform(get("/veiculos/" + idGerado)

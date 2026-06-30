@@ -39,11 +39,11 @@ public class VehicleRepositoryTest {
         vehicleRepository.save(new Vehicle(null, "XYZ9E87", "Fiat", 2022, "Azul", BigDecimal.valueOf(8000), true));
 
 
-        boolean existent = vehicleRepository.existsByLicencePlateAndIdVehicleNot("XYZ9E87", v1.getIdVehicle());
+        boolean existent = vehicleRepository.existsByLicensePlateAndIdVehicleNot("XYZ9E87", v1.getIdVehicle());
         assertThat(existent).isTrue();
 
 
-        boolean sameVehicle = vehicleRepository.existsByLicencePlateAndIdVehicleNot("ABC1D23", v1.getIdVehicle());
+        boolean sameVehicle = vehicleRepository.existsByLicensePlateAndIdVehicleNot("ABC1D23", v1.getIdVehicle());
         assertThat(sameVehicle).isFalse();
     }
 }
