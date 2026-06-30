@@ -1,6 +1,7 @@
 package org.example.desafio.desafiotinnova.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.desafio.desafiotinnova.dto.request.VehicleCreateDTO;
 import org.example.desafio.desafiotinnova.dto.request.VehicleUpdateDTO;
 import org.example.desafio.desafiotinnova.dto.response.ReportBrandDTO;
@@ -25,6 +26,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class VehicleServiceImpl implements VehicleService {
 
     private final VehicleRepository vehicleRepository;
@@ -45,6 +47,9 @@ public class VehicleServiceImpl implements VehicleService {
         vehicle.setYear(dto.year());
         vehicle.setColor(dto.color());
         vehicle.setPrice(priceUSD);
+        vehicle.setActive(true);
+
+        log.info("Creating vehicle with licence plate: {}", dto.licencePlate());
 
         return mapToResponse(vehicleRepository.save(vehicle), dollarRate);
     }
@@ -55,6 +60,7 @@ public class VehicleServiceImpl implements VehicleService {
         Specification<Vehicle> spec = VehicleSpecifications.byFilters(brand, year, color, minPrice, maxPrice)
                 .and((root, query, cb) -> cb.equal(root.get("active"), true));
         BigDecimal dollarRate = currencyService.getUSDDollarRate();
+        log.info("Listing vehicles with filters");
         return vehicleRepository.findAll(spec, pageable).map(v -> mapToResponse(v, dollarRate));
     }
 

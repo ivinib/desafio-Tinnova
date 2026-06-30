@@ -31,23 +31,21 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
+                .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
 
                         .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
-
+                        .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 
-
                         .requestMatchers(HttpMethod.GET, "/veiculos/**").hasAnyRole("USER", "ADMIN")
-
 
                         .requestMatchers(HttpMethod.POST, "/veiculos/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/veiculos/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/veiculos/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/veiculos/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
-                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 
                         .anyRequest().authenticated()
                 )

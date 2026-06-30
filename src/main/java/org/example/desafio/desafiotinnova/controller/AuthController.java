@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.desafio.desafiotinnova.dto.request.LoginRequestDTO;
 import org.example.desafio.desafiotinnova.dto.response.TokenResponseDTO;
 import org.example.desafio.desafiotinnova.security.JwtTokenService;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
+@Slf4j
 public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenService tokenService;
@@ -36,6 +38,7 @@ public class AuthController {
         );
 
         Authentication authentication = authenticationManager.authenticate(authenticationToken);
+        log.info("User {} authenticated with role {}", authentication.getName(), authentication.getAuthorities());
 
         String role = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
@@ -43,7 +46,7 @@ public class AuthController {
                 .orElse("ROLE_USER")
                 .replace("ROLE_", "");
 
-        // 3. Gera o Token JWT contendo as permissões adequadas
+
         String token = tokenService.generateToken(authentication.getName(), role);
 
         return ResponseEntity.ok(new TokenResponseDTO(token, "Bearer"));

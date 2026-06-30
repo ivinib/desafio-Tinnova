@@ -43,6 +43,10 @@ public class VehicleController {
 
 
     @GetMapping
+    @Operation(
+            summary = "Buscar e filtrar veículos",
+            description = "Retorna os veículos ativos de forma paginada. Permite filtros por marca, ano, cor e faixa de preço (BRL)."
+    )
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<Page<VehicleResponseDTO>> listFiltered(
             @RequestParam(required = false) String brand,
@@ -57,24 +61,40 @@ public class VehicleController {
     }
 
     @GetMapping("/{id}")
+    @Operation(
+            summary = "Buscar um veiculo especifico",
+            description = "Retorna os dados de um veiculo especifico pelo seu Id."
+    )
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<VehicleResponseDTO> findById(@PathVariable Long id) {
         return ResponseEntity.ok(vehicleService.findById(id));
     }
 
     @PutMapping("/{id}")
+    @Operation(
+            summary = "Atualizar totalmente um veículo",
+            description = "Permite atualizar todos os dados de um veículo."
+    )
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<VehicleResponseDTO> updateTotal(@PathVariable Long id, @RequestBody @Valid VehicleUpdateDTO dto) {
         return ResponseEntity.ok(vehicleService.updateTotal(id, dto));
     }
 
     @PatchMapping("/{id}")
+    @Operation(
+            summary = "Atualizar parcialmente um veículo",
+            description = "Permite atualizar parcialmente os dados de um veículo. Campos não fornecidos permanecem inalterados."
+    )
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<VehicleResponseDTO> atualizarParcial(@PathVariable Long id, @RequestBody VehicleUpdateDTO dto) {
         return ResponseEntity.ok(vehicleService.updateParcial(id, dto));
     }
 
     @DeleteMapping("/{id}")
+    @Operation(
+            summary = "Deletar um veículo",
+            description = "Permite deletar um veículo pelo seu Id. Realiza o soft delete, colocando o veiculo como inativo."
+    )
     @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
@@ -82,6 +102,10 @@ public class VehicleController {
     }
 
     @GetMapping("/relatorios/por-marca")
+    @Operation(
+            summary = "Gerar relatório de veículos por marca",
+            description = "Retorna uma lista de marcas com a quantidade de veículos ativos e o preço médio em BRL e USD."
+    )
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<List<ReportBrandDTO>> getReportByBrand() {
         return ResponseEntity.ok(vehicleService.getReportByBrand());

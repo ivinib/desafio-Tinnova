@@ -14,7 +14,7 @@ import org.hibernate.annotations.SQLDelete;
 
 @Entity
 @Table(name = "tb_vehicle", uniqueConstraints = {@UniqueConstraint(columnNames = "licence_plate")})
-@SQLDelete(sql = "UPDATE tb_vehicle SET ativo = false WHERE id_vehicle = ?")
+@SQLDelete(sql = "UPDATE tb_vehicle SET active = false WHERE id_vehicle = ?")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
