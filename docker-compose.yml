@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      # Point Spring Boot to the Redis service within the Docker network
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      # You might need to add other Spring Boot environment variables here
+      # e.g., for database connection if you use one
+    depends_on:
+      - redis
+    networks:
+      - app-network
+
+  redis:
+    image: "redis:7-alpine"
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

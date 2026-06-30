@@ -13,6 +13,8 @@ import org.springframework.stereotype.Service;
 public class AuthenticationService implements UserDetailsService {
     private final PasswordEncoder passwordEncoder;
 
+
+
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         if ("admin".equalsIgnoreCase(username)) {

@@ -19,6 +19,8 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    //Class that handles exceptions and converts them into standard error messages
+
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorPayload> handleNotFound(ResourceNotFoundException ex, HttpServletRequest request) {
         ErrorPayload error = new ErrorPayload(

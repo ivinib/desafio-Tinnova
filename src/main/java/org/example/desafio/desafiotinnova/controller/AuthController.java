@@ -45,7 +45,7 @@ public class AuthController {
         } catch (BadCredentialsException ex) {
             log.warn("Authentication failed for user: {}", loginRequestDto.username());
 
-            throw new BadCredentialsException("Usuário ou senha incorretos.");
+            throw new BadCredentialsException("Username or password incorrect.");
         }
 
         log.info("User {} authenticated with role {}", authentication.getName(), authentication.getAuthorities());

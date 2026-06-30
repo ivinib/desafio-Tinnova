@@ -18,6 +18,7 @@ import java.util.List;
 public class DatabaseSeeder {
     private final VehicleRepository vehicleRepository;
 
+    //Helper created to populate database with few registers to have initial data on database
     @EventListener(ContextRefreshedEvent.class)
     public void seed() {
         if (vehicleRepository.count() == 0) {

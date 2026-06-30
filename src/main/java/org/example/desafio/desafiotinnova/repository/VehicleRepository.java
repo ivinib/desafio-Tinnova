@@ -14,6 +14,7 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long>, JpaSpec
     boolean existsVehicleByLicensePlate(String licensePlate);
     boolean existsByLicensePlateAndIdVehicleNot(String licensePlate, Long idVehicle);
 
+    //Custom query to generate the report grouping by vehicle brand, counting how many vehicles there are for each brand and calculating the average price
     @Query("SELECT new org.example.desafio.desafiotinnova.dto.response.ReportBrandDTO(v.brand, COUNT(v), AVG(v.price)) " +
            "FROM Vehicle v GROUP BY v.brand")
     List<ReportBrandDTO> getReportByBrand();

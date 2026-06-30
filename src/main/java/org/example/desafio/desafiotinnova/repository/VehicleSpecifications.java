@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class VehicleSpecifications {
-
+    //Specification to make the filtering of vehicles by using it attributes
     public static Specification<Vehicle> byFilters(
             String brand,
             Integer year,
